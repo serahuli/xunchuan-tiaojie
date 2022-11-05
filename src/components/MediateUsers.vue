@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { getMediateUsers } from '../apis/index'
+import { getMediateUsers } from '@/apis/index'
 export default {
   name: 'MediateUsers',
   data() {
@@ -35,6 +35,7 @@ export default {
   },
   mounted() {
     this.init()
+    setInterval(() => this.init(), 30 * 60 * 1000)
   },
   methods: {
     init() {
@@ -52,9 +53,9 @@ export default {
 @import '../styles/utils.scss';
 
 .mediate-infos {
+  width: 100%;
   .row-header {
     width: 100%;
-    width: vw(1084);
     height: vh(109);
     line-height: vh(109);
     background: rgba(29,84,128,0.49);
@@ -117,7 +118,7 @@ export default {
   }
 
   .area-col {
-    width: vw(292);
+    flex-grow: 1;
   }
 
   .num-col {

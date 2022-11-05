@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { getConflictTypes } from '../apis/index'
+import { getConflictTypes } from '@/apis/index'
 import { designWidth } from '../styles/utils.scss'
 export default {
   name: 'ConflictTypes',
@@ -15,7 +15,8 @@ export default {
     }
   },
   mounted() {
-    this.init();
+    this.init()
+    setInterval(() => this.init(), 30 * 60 * 1000)
   },
   methods: {
     init() {

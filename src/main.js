@@ -10,6 +10,7 @@ Vue.use(ElementUI);
 
 Vue.prototype.dayjs = dayjs
 Vue.prototype.echarts = echarts
+Vue.prototype.$EventBus = new Vue();
 
 Vue.config.productionTip = false
 

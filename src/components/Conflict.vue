@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { getConflictAreas } from '../apis/index'
+import { getConflictAreas } from '@/apis/index'
 
 export default {
   name: 'Conflict',
@@ -28,6 +28,7 @@ export default {
   },
   mounted() {
     this.init()
+    setInterval(() => this.init(), 30 * 60 * 1000)
   },
   methods: {
     init() {
@@ -62,7 +63,6 @@ export default {
           return 'tag-yellow';
         default:
           return 'tag-blue'
-        
       }
     }
   },
@@ -82,10 +82,11 @@ export default {
     margin-top: vh(38);
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     position: relative;
     .conflict-index {
-      width: vw(47);
-      height: vh(54);
+      width: 20px;
+      height: 100%;
       line-height: vh(54);
       border-radius: vw(2);
       font-size: vh(28);
@@ -124,6 +125,7 @@ export default {
     }
 
     .percent-wrap {
+      flex-grow: 1;
       width: vw(543);
       height: vh(19);
       background: #062969;
@@ -136,10 +138,9 @@ export default {
     }
 
     .conflict-num {
+      width: vw(100);
       margin-left: vw(20);
     }
-
-    
   }
 }
 </style>

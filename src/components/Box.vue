@@ -38,6 +38,7 @@ export default {
   box-sizing: border-box;
   color: #FFFFFF;
   padding: vh(33) vw(45) vh(48) vw(81);
+  position: relative;
 
   .box-wrap--title {
     display: flex;

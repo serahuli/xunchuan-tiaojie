@@ -4,37 +4,42 @@
       <div ref="historyChart" id="historyChart" style="height: 300px"></div>
     </div>
     <div class="circles">
-      <div class="circle-data">
-        <CircleProgress  
-          :id="1"
-          :radius="20"
-          :progress="75"
-          :isAnimation="true"
-          :gradientsColor='[ { offset: "0%", color: "#60cbb9" },{ offset: "100%", color: "#614ef6" } ]'
-        >
-          <div class="show-title">昨日新增</div>
-          <div class="show-num">6</div>
-        </CircleProgress>
-      </div>
-      <div class="circle-data">
-        <CircleProgress  
-          :id="2"
-          :radius="20"
-          :progress="75"
-          :isAnimation="true"
-          :gradientsColor='[ { offset: "0%", color: "#60cbb9" },{ offset: "100%", color: "#614ef6" } ]'
-        >
-          <div class="show-title">7日新增</div>
-          <div class="show-num">26</div>
-        </CircleProgress>
-      </div>
+      <svg class="circle circle1">
+        <defs>
+          <linearGradient x1="1" y1="0" x2="0" y2="0" id="gradient3">
+            <stop offset="0%" stop-color="#b0cbb9"></stop>
+            <stop offset="100%" stop-color="#614ef6"></stop>
+          </linearGradient>
+        </defs>
+        <circle  cx="45" cy="45" r="30" fill="none" stroke-width="6" stroke="url('#gradient3')"></circle>
+        <text x="45" y="45" style="font-size: 12px;" fill="rgba(21, 110, 208, 1)" text-anchor="middle">
+          <tspan class="text">昨日新增</tspan>
+        </text>
+        <text x="45" y="65"  style="font-size: 16px;" fill="#fff" text-anchor="middle">
+          <tspan class="text">{{yerDay}}</tspan>
+        </text>
+      </svg>
+      <svg class="circle circle2">
+        <defs>
+          <linearGradient x1="1" y1="0" x2="0" y2="0" id="gradient3">
+            <stop offset="0%" stop-color="#b0cbb9"></stop>
+            <stop offset="100%" stop-color="#614ef6"></stop>
+          </linearGradient>
+        </defs>
+        <circle  cx="45" cy="45" r="30" fill="none" stroke-width="6" stroke="url('#gradient3')"></circle>
+        <text x="45" y="45" style="font-size: 12px;" fill="rgba(21, 110, 208, 1)" text-anchor="middle">
+          <tspan class="text">7日新增</tspan>
+        </text>
+        <text x="45" y="65"  style="font-size: 16px;" fill="#fff" text-anchor="middle">
+          <tspan class="text">{{sevenDay}}</tspan>
+        </text>
+      </svg>
     </div>
   </div>
 </template>
 
 <script>
-import CircleProgress  from 'vue-circleprogressbar';
-import { getHistoryByDate } from '../apis/index'
+import { getHistoryByDate } from '@/apis/index'
 import { designWidth } from '../styles/utils.scss'
 export default {
   name: 'History',
@@ -42,21 +47,28 @@ export default {
     return {
       history: undefined,
       historyXData: [],
-      historyYData: []
+      historyYData: [],
+      yerDay: 0,
+      sevenDay: 0
     }
   },
-  components: { CircleProgress },
   mounted() {
-    this.initHistoryByDate();
+    this.init()
+    setInterval(() => this.init(), 30 * 60 * 1000)
   },
   methods: {
-    initHistoryByDate() {
+    init() {
       getHistoryByDate()
       .then((res) => {
         this.history = res
         this.historyXData = Object.keys(res)
         this.historyYData = Object.values(res)
-
+        this.yerDay = Object.values(res)[0]
+        let sum = 0;
+        for(let i = 0; i < Object.values(res).length; i++) {
+          sum+=Object.values(res)[i]
+        }
+        this.sevenDay = sum
         this.initHistoryChart()
       })
     },
@@ -88,7 +100,8 @@ export default {
             },
             splitLine: {
               show: false
-            }
+            },
+            max: 50
           },
           series: [
             {
@@ -117,6 +130,10 @@ export default {
           ],
           grid: {
             show: false,
+            top: 0,
+            bottom: 40,
+            left: 30,
+            right: 0
           }
         });
       })
@@ -130,7 +147,6 @@ export default {
 @import '../styles/font.css';
 
 .history-wrap {
-  position: relative;
   .area-charts {
     width: 100%;
     height: vh(628);
@@ -139,39 +155,32 @@ export default {
 
   .circles {
     position: absolute;
-    top: vh(-101);
-    right: vw(50);
-
+    top: 0;
+    left: 0;
     display: flex;
 
-    .circle-data {
-      width: vw(200);
-      height: vw(200);
-      &:first-child {
-        margin-right: vw(20);
-      }
+    .circle1 {
+      top: 4px;
+      left: 140px;
+    }
 
-      .show-title {
-        width: vw(200);
-        text-align: center;
-        position: absolute;
-        top: vh(35);
-        font-size: vw(30);
-        font-family: Source Han Sans CN;
-        font-weight: 400;
-        color: #156ED0;
-      }
+    .circle2 {
+      top: 4px;
+      left: 240px;
+    }
 
-      .show-num {
-        width: vw(200);
-        text-align: center;
-        position: absolute;
-        top: vh(65);
-        font-size: vw(48);
-        font-family: Source Han Sans CN;
-        font-weight: 400;
-        color: #FFF;
-      }
+    .circle {
+      position: absolute;
+      
+      fill: none;
+      
+      stroke-width: 8;
+      stroke-dasharray: 314;
+      stroke-dashoffset:0;
+      animation: circle 3s infinite;
+      stroke: linear-gradient(red, blue);
+      text-align: center;
+
     }
   }
   
