@@ -41,13 +41,17 @@
         </div>
       </div>
     </div>
-    <div class="movies-wrap"></div>
+    <div class="movies-wrap">
+      <img @click="$EventBus.$emit('setOpenStatus', true)" src="../assets/images/home/enlarge.png" class="enlarge">
+      <Bottom />
+    </div>
   </div>
 </template>
 
 <script>
 import { getUserInfos, getHazardLevel } from '@/apis/index'
 import Map from './Map.vue'
+import Bottom from './Bottom.vue'
 export default {
   name: 'Overview',
   data() {
@@ -61,7 +65,7 @@ export default {
     this.init()
     setInterval(() => this.init(), 30 * 60 * 1000)
   },
-  components: { Map },
+  components: { Map, Bottom },
   methods: {
     init() {
       getUserInfos().then((res) => this.userData = res);
@@ -164,7 +168,24 @@ export default {
     }
   }
 
-  > .movies-wrap {}
+  > .movies-wrap {
+    box-sizing: border-box;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 9;
+    width: 100%;
+    height: vh(510);
+    padding: 0 vw(20);
+
+    .enlarge {
+      position: absolute;
+      top: vh(20);
+      right: vw(60);
+      cursor: pointer;
+      z-index: 9;
+    }
+  }
 
 }
 </style>

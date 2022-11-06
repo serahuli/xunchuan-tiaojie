@@ -29,6 +29,10 @@
         </Box>
       </div>
     </div>
+
+    <RealVideo />
+
+    <div class="pop-c" v-if="show"></div>
   </div>
 </template>
 
@@ -42,10 +46,19 @@ import ConflictTypes from '@/components/ConflictTypes.vue'
 import Overview from '@/components/Overview.vue'
 import Real from '@/components/RealMediate.vue'
 import Header from '@/components/Header.vue'
+import RealVideo from '@/components/RealVideo.vue'
 
 export default {
   name: 'Home',
-  components: { Conflict, Box, MediateUsers, History, MediateRecords, ConflictTypes, Overview, Real, Header },
+  components: { Conflict, Box, MediateUsers, History, MediateRecords, ConflictTypes, Overview, Real, Header, RealVideo },
+  data() {
+    return {
+      show: false,
+    }
+  },
+  mounted() {
+    this.$EventBus.$on("setOpenStatus", (res) => this.show = res)
+  },
 }
 </script>
 
@@ -88,13 +101,13 @@ export default {
         width: 100%;
         color: #FFFFFF;
         margin-top: vh(26);
-        flex:1
+        flex: 1;
       }
 
       > .history-wrap {
+        flex-shrink: 1;
         width: 100%;
         margin-top: vh(50);
-        flex:1
       }
     }
 
@@ -129,5 +142,15 @@ export default {
       }
     }
   }
+}
+
+.pop-c {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
+  background: rgba(0,0,0,0.3);
 }
 </style>

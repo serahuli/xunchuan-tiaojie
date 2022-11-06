@@ -9,7 +9,7 @@
         <div class="right">
     		  {{ subTitle }}
         </div>
-	    </slot>
+      </slot>
     </div>
     <div class="box-infos">
       <slot name="container"></slot>
@@ -39,6 +39,8 @@ export default {
   color: #FFFFFF;
   padding: vh(33) vw(45) vh(48) vw(81);
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   .box-wrap--title {
     display: flex;
@@ -62,6 +64,10 @@ export default {
     .right {
       font-size: vh(36);
     }
+  }
+
+  .box-infos {
+    flex-grow: 1;
   }
 }
 </style>

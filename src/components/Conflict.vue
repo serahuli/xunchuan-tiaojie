@@ -73,7 +73,7 @@ export default {
 <style scoped lang="scss">
 @import '../styles/utils.scss';
 .conflict-infos {
-  margin-top: vh(59);
+  margin-top: vh(40);
 
   .conflict-item {
     width: 100%;

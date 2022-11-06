@@ -232,20 +232,15 @@ export default {
       try {
         this.client = mqtt.connect(connectUrl, options);
       } catch (error) {
-        console.log("wss.connect error", error);
       }
 
       this.client.on("connect", () => {
-        console.log("Connection succeeded000!");
-
         this.doSubscribe();
       });
       this.client.on("error", (error) => {
-        console.log("Connection failed", error);
       });
       this.client.on("message", (topic, message) => {
         let da = JSON.parse(message);
-        console.log(da);
         this.reals.push(da)
       });
     },
@@ -254,11 +249,9 @@ export default {
       const { topic, qos } = this.subscription;
       this.client.subscribe(topic, qos, (error, res) => {
         if (error) {
-          console.log("Subscribe to topics error", error);
           return;
         }
         this.subscribeSuccess = true;
-        console.log("Subscribe to topics res", res);
       });
     },
   }

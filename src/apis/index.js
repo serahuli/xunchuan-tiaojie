@@ -147,6 +147,16 @@ export const getHazardLevel = () => {
   })
 }
 
+export const getShare = () => {
+  return new Promise((resolve) => {
+    http({
+      method: 'post',
+      url: `/home/view/getMediateShareUrlList`,
+    })
+    .then(res => resolve(res))
+    .catch(() => resolve([]))
+  })
+}
 export const getWeathers = () => {
   return new Promise((resolve) => {
     const WEATHER_ID = 'd0aac87446f549cfb17312a95421312c'
