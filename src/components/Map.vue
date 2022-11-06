@@ -5,99 +5,36 @@
 </template>
 
 <script>
-
+import mqtt from "mqtt";
 import { designWidth, designHeight } from '../styles/utils.scss'
 import { mapData, geoCoordMap, getMediate } from '@/utils'
-import * as mqtt from 'mqtt'
+
 export default {
-  name: 'ConflictTypes',
+  name: 'Map',
   data() {
     return {
-      conflictTypes: [],
       currentMap: '临沧市',
-      data: {
-        "searchValue": null,
-        "createBy": null,
-        "createTime": "2022-10-28 10:54:01",
-        "updateBy": null,
-        "updateTime": null,
-        "remark": null,
-        "params": {},
-        "mediateRecordId": 101256,
-        "applicantUserId": null,
-        "detail": null,
-        "applicantUserRealName": "杨正明",
-        "applicantUserPhoneNo": "15126451050",
-        "applicantUserSex": "男",
-        "applicantUserIdCardNo": "533521195401090317",
-        "applicantUserRemark": null,
-        "applicantUserHeadImage": "https://jie.xctsoft.com:8080/profile/download/1665710543496.jpg",
-        "applicantUserAddress": "云南省临沧市临翔区蚂蚁堆乡",
-        "respondentUserId": null,
-        "respondentUserRealName": "田尼门",
-        "respondentUserPhoneNo": "13759386000",
-        "respondentUserIdCardNo": null,
-        "respondentUserRemark": null,
-        "respondentUserHeadImage": null,
-        "respondentUserAddress": null,
-        "respondentUserSex": "男",
-        "mediateType": 8,
-        "mediateStatus": "00",
-        "mediatorUserId": null,
-        "mediatorUserRealName": null,
-        "mediateForm": null,
-        "applicationChannel": 1,
-        "endTime": null,
-        "mediateDetail": "请法院依法判令：1、撤销原、被告共同签订的《农田租赁协议》；2、立即垦复并交还所租用的1亩山地；3、赔偿2022年的损失2000.00元。",
-        "area": "临翔区",
-        "street": null,
-        "mediateCount": 0,
-        "queryCon": null,
-        "mediateDesc": "",
-        "flows": [],
-        "attachs": [],
-        "inviteList": [],
-        "evidence": [],
-        "confirm": [],
-        "jconfirm": [],
-        "lastCallTime": "2022-10-28 10:54:01",
-        "lastSysUserId": 101,
-        "callCount": 2,
-        "stakeholder": null,
-        "delTag": "0",
-        "endType": null,
-        "endReason": null,
-        "endUserId": null,
-        "endUserName": null,
-        "endUserType": null,
-        "litigantUserPhone": null,
-        "applicantList": [],
-        "respondentList": [],
-        "applicantUserType": "1",
-        "respondentUserType": "2",
-        "applicantIdCardAddress": null,
-        "respondentIdCardAddress": null,
-        "applicantJob": null,
-        "respondentJob": null,
-        "applicantCompany": null,
-        "respondentCompany": "耿马孟定顶峰进出口有限公司临沧分公司",
-        "applicantDeliveryAddress": null,
-        "respondentDeliveryAddress": null,
-        "applicantOrgNo": null,
-        "respondentOrgNo": "0000",
-        "applicantProxyType": null,
-        "respondentProxyType": null,
-        "applicantPracticeNo": null,
-        "respondentPracticeNo": null,
-        "totalCount": null,
-        "sysUserId": 101,
-        "mediateTypeName": null,
-        "litigantUserName": null,
-        "litigantUserId": null,
-        "mediateStatusList": null,
-        "keyLevel": 1,
-        "seqNo": -1007
-      }
+      reals: [],
+      connection: {
+        host: 'jie.xctsoft.com',
+        port: '1883',
+        endpoint: "/mqtt",
+        clean: true, // 保留会话
+        connectTimeout: 4000, // 超时时间
+        reconnectPeriod: 4000, // 重连时间间隔
+        // 认证信息
+        username: "xct",
+        password: "Xct@24303",
+      },
+      subscription: {
+        topic: '/webnowmediaterecord',
+        qos: 2,
+      },
+      client: {
+        connected: false,
+      },
+      subscribeSuccess: false,
+      myChart: null
     }
   },
   mounted() {
@@ -105,22 +42,31 @@ export default {
 
     this.initMqtt();
   },
+  watch: {
+    reals: {
+      handler: function(val, oldVal) {
+        this.initMapChart()
+      },
+      deep: true,
+      immediate: true
+    },
+  },
   methods: {
     initMapChart() {
       this.$nextTick(() => {
         const { path, query } = this.$route
         const currentMapInfo = mapData[query.countryName ? query.countryName : '临沧市']
-        let myChart = this.echarts.init(this.$refs.mapChart)
+        this.myChart = this.echarts.init(this.$refs.mapChart)
         this.echarts.registerMap(currentMapInfo.name, currentMapInfo.map);
         let chartMap = this.$refs.mapBg
         const height = chartMap.clientHeight
         const width = chartMap.clientWidth
-        myChart.getDom().style.height = `${height}px`;
-        myChart.getDom().style.width = `${width}px`;
+        this.myChart.getDom().style.height = `${height}px`;
+        this.myChart.getDom().style.width = `${width}px`;
         // myChart.resize()
 
         // 绘制图表
-        myChart.setOption({
+        this.myChart.setOption({
           series: [this.getParams(currentMapInfo)],
           geo: {
             map: currentMapInfo.name,
@@ -154,7 +100,7 @@ export default {
           },
         });
 
-        myChart.on('click', params => {
+        this.myChart.on('click', params => {
           if(mapData[params.name]) {
             if(params.name === '临沧市') {
               this.$router.push({ path: "/" });
@@ -169,67 +115,20 @@ export default {
       })
     },
 
+    formatData() {
+      let val = []
+      this.reals.map((item) => {
+        val.push({ value: [...geoCoordMap[item.area], item.record] })
+      })
+      return val
+    },
+
     getParams(currentMapInfo) {
       let series = {
         name: 'Top 5',
         type: 'scatter',
         coordinateSystem: "geo",
-        data: [
-          {
-            name: '00',
-            value: [99.402495, 23.534579, { 
-              applicantUserRealName: '张斌',
-              applicantUserPhoneNo: '13455553637',
-              "applicantUserAddress": "云南省临沧市临翔区蚂蚁堆乡",
-              mediateType: 1,
-            }]
-          }
-        ],
-        symbol: 'image://data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAcCAYAAAAAwr0iAAAAAXNSR0IArs4c6QAAAyxJREFUSEu9ll1IU2EYx//Pu3PO/KDsIuwi6EYpKjK2CdFNRNCXEglZdBUZVmzTiiIiikQCkQoh0E0rsbIrJaSC6qILC0oqtkkXRiAV0ZckfXhR2457n9h0onV2dvaB79Xg/f//z2/vx3NeQhaj0hdeIUGXGLSBgB/MfLOkSGsZrKNwpnGUqcHp1zcx8wABC2d7GXghbGp14DCNZ5KZEYDDH9kFplsEFBgXoddk07cFDhd9sAphGcDVET3KhDYAwjycv0imqmGvNmwFIj0AMzl90SYQNVkJTGgEfvIk7Qw1qE/SeUwBNjaxMlEa6wLJA+mCDOYjIN4XdNv7zLwpASoucrFSHO0HaHsWxRMWBmKC0Bhwa/5UGYYAFX4uVVi/D8CVujiNCMKh+LxkXAV4ZSotM58Pee3njOb/A3B1hcs4pjwEZLnZP5eSa4Yb7HfiGpcvUsOgATM9Q1wrGbO5B5tpcrZuDoCrPeqUhPtEWJJu2ZlRH/Jq3VMA0XpGfBXSDbprDyt7h47Tn6RyBqCyU98sJd8GsCBdzPT8DzC1Jn7b+DQkFln0PbNr6o6hevoe1ycAnP7IHjD1AtAshuQooxGORTeHGos/0/o2LowU6PH2WZRjamZ2EteDbqUuCfANQHFmCbmpCaI74FHqE1tQ2TlZJaU8AaBk+v6uTt3vZ47PPRBdgZSLQWgGsMwciT4B/HVaM6Kq6snnB2nMsA+4fPobBi83CXwZdKvrQMRxjaMzsgqSXhFgS+2hM0GP2vLvfFYAzNwa8tpPzw5z+vSPAC+dHwDgRsij7U8W29jDBb/+6N8JKJwXAAnxdtijlCWLOdr1DST4cZozkJctiBJELxAbXzCmnU22VUdntFJIrmXAAdAWY5C8nAHRE/QoKT/Nu/vYNjqe2Io5z7UpoLwAIEDgR2ZLLUFHja9wHgAI4p3E5DHA9tsIgpjXYOrZZjDyAJBj77N+CJ0+fcTsgZEVCNOpoFe9YK0R+fV+Zq7NqlAKE0NUhTzKA0sAa9sjq22Cnia/DbmD8MPgmFaNZpKWAOIiZ0e4nEnEe/dW42tlBUu8B7N/IqZcHj1CESPHX2WPUSxPVxV5AAAAAElFTkSuQmCC',
-        symbolSize: 30,
-        label: {
-          show: true,
-          position: 'top',
-          distance: 20,
-          padding: [10, 20],
-          width: (1000 / designWidth) * document.body.clientHeight ,
-          backgroundColor: {
-            image: `${require('../assets/images/home/border.png')}`
-          },
-          formatter: (params) => {
-            console.log(params, 'sera');
-            return [
-              `              {title|${params.data.value[2].applicantUserRealName}} {title|${params.data.value[2].applicantUserPhoneNo}}\n`,
-              `{icon|} {address|${params.data.value[2].applicantUserAddress}}\n`,
-              `             {type|${getMediate[params.data.value[2].mediateType]}}`,
-            ]
-          },
-          overflow: 'truncate',
-          ellipsis: '...',
-          rich: {
-            icon: {
-              borderWidth: 10,
-              fontSize: 20,
-              height: (200 / designHeight) * document.body.clientHeight,
-              color: '#fff',
-              backgroundColor: {
-                image: `${require('../assets/images/home/waring.png')}`
-              },
-            },
-            title: {
-              color:'#fff',
-              fontSize:(60 / designHeight) * document.body.clientHeight
-            },
-            address: {
-              color:'#fff',
-              fontSize:(60 / designHeight) * document.body.clientHeight,
-            },
-            type: {
-              color:'rgba(255, 64, 64, 1)',
-              fontSize:(60 / designHeight) * document.body.clientHeight,
-            }
-          },
-        },
+        data: this.formatData(),
         zlevel: 1
       }
 
@@ -237,6 +136,50 @@ export default {
         case '临沧市':
           series.aspectScale = 1 // 宽高比, 对应背景图
           series.top = '20%' 
+          series.label = {
+            show: true,
+            position: 'top',
+            distance: 20,
+            padding: [10, 20],
+            width: (1000 / designWidth) * document.body.clientHeight ,
+            backgroundColor: {
+              image: `${require('../assets/images/home/border.png')}`
+            },
+            formatter: (params) => {
+              return [
+                `              {title|${params.data.value[2].applicantUserRealName}} {title|${params.data.value[2].applicantUserPhoneNo}}\n`,
+                `{icon|} {address|${params.data.value[2].applicantUserAddress}}\n`,
+                `             {type|${getMediate[params.data.value[2].mediateType]}}`,
+              ]
+            },
+            overflow: 'truncate',
+            ellipsis: '...',
+            rich: {
+              icon: {
+                borderWidth: 10,
+                fontSize: 20,
+                height: (200 / designHeight) * document.body.clientHeight,
+                color: '#fff',
+                backgroundColor: {
+                  image: `${require('../assets/images/home/waring.png')}`
+                },
+              },
+              title: {
+                color:'#fff',
+                fontSize:(60 / designHeight) * document.body.clientHeight
+              },
+              address: {
+                color:'#fff',
+                fontSize:(60 / designHeight) * document.body.clientHeight,
+              },
+              type: {
+                color:'rgba(255, 64, 64, 1)',
+                fontSize:(60 / designHeight) * document.body.clientHeight,
+              }
+            },
+          },
+          series.symbol = 'image://data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAcCAYAAAAAwr0iAAAAAXNSR0IArs4c6QAAAyxJREFUSEu9ll1IU2EYx//Pu3PO/KDsIuwi6EYpKjK2CdFNRNCXEglZdBUZVmzTiiIiikQCkQoh0E0rsbIrJaSC6qILC0oqtkkXRiAV0ZckfXhR2457n9h0onV2dvaB79Xg/f//z2/vx3NeQhaj0hdeIUGXGLSBgB/MfLOkSGsZrKNwpnGUqcHp1zcx8wABC2d7GXghbGp14DCNZ5KZEYDDH9kFplsEFBgXoddk07cFDhd9sAphGcDVET3KhDYAwjycv0imqmGvNmwFIj0AMzl90SYQNVkJTGgEfvIk7Qw1qE/SeUwBNjaxMlEa6wLJA+mCDOYjIN4XdNv7zLwpASoucrFSHO0HaHsWxRMWBmKC0Bhwa/5UGYYAFX4uVVi/D8CVujiNCMKh+LxkXAV4ZSotM58Pee3njOb/A3B1hcs4pjwEZLnZP5eSa4Yb7HfiGpcvUsOgATM9Q1wrGbO5B5tpcrZuDoCrPeqUhPtEWJJu2ZlRH/Jq3VMA0XpGfBXSDbprDyt7h47Tn6RyBqCyU98sJd8GsCBdzPT8DzC1Jn7b+DQkFln0PbNr6o6hevoe1ycAnP7IHjD1AtAshuQooxGORTeHGos/0/o2LowU6PH2WZRjamZ2EteDbqUuCfANQHFmCbmpCaI74FHqE1tQ2TlZJaU8AaBk+v6uTt3vZ47PPRBdgZSLQWgGsMwciT4B/HVaM6Kq6snnB2nMsA+4fPobBi83CXwZdKvrQMRxjaMzsgqSXhFgS+2hM0GP2vLvfFYAzNwa8tpPzw5z+vSPAC+dHwDgRsij7U8W29jDBb/+6N8JKJwXAAnxdtijlCWLOdr1DST4cZozkJctiBJELxAbXzCmnU22VUdntFJIrmXAAdAWY5C8nAHRE/QoKT/Nu/vYNjqe2Io5z7UpoLwAIEDgR2ZLLUFHja9wHgAI4p3E5DHA9tsIgpjXYOrZZjDyAJBj77N+CJ0+fcTsgZEVCNOpoFe9YK0R+fV+Zq7NqlAKE0NUhTzKA0sAa9sjq22Cnia/DbmD8MPgmFaNZpKWAOIiZ0e4nEnEe/dW42tlBUu8B7N/IqZcHj1CESPHX2WPUSxPVxV5AAAAAElFTkSuQmCC',
+          series.symbolSize = 30,
           delete series.left
           break;
         case '永德县':
@@ -284,20 +227,40 @@ export default {
     },
 
     initMqtt() {
-      let commonApi = "tcp://101.132.152.117:1883";
-      const client = mqtt.connect(commonApi, {
-        username: 'xct',
-        password: 'Xct@24303'
+      const { host, port, endpoint, ...options } = this.connection;
+      const connectUrl = `wss://${host}${endpoint}`;
+      try {
+        this.client = mqtt.connect(connectUrl, options);
+      } catch (error) {
+        console.log("wss.connect error", error);
+      }
+
+      this.client.on("connect", () => {
+        console.log("Connection succeeded000!");
+
+        this.doSubscribe();
       });
-      client.on("connect", function () {
-        console.log("连接成功....");
+      this.client.on("error", (error) => {
+        console.log("Connection failed", error);
       });
-      //如果连接错误，打印错误
-      client.on("error", function (err) {
-        console.log("err=>", err);
-        vm.client.end();
+      this.client.on("message", (topic, message) => {
+        let da = JSON.parse(message);
+        console.log(da);
+        this.reals.push(da)
       });
-    }
+    },
+
+    doSubscribe() {
+      const { topic, qos } = this.subscription;
+      this.client.subscribe(topic, qos, (error, res) => {
+        if (error) {
+          console.log("Subscribe to topics error", error);
+          return;
+        }
+        this.subscribeSuccess = true;
+        console.log("Subscribe to topics res", res);
+      });
+    },
   }
 }
 </script>
